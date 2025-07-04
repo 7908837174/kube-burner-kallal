@@ -296,15 +296,17 @@ teardown_file() {
     skip "Snapshotter tests explicitly skipped by user (SKIP_SNAPSHOTTER_TESTS=true)"
   fi
   
-  # We skip if required variables are not set - this is a user configuration issue
+  # Required variables must be set, or user must explicitly skip the test
   if [[ -z "$VOLUME_SNAPSHOT_CLASS_NAME" ]]; then
-    echo "VOLUME_SNAPSHOT_CLASS_NAME must be set when using USE_EXISTING_CLUSTER"
-    skip "Test skipped: VOLUME_SNAPSHOT_CLASS_NAME not set (required user configuration)"
+    echo "FATAL: VOLUME_SNAPSHOT_CLASS_NAME must be set when using USE_EXISTING_CLUSTER"
+    echo "Set SKIP_SNAPSHOTTER_TESTS=true to explicitly skip this test if needed"
+    return 1
   fi
   export STORAGE_CLASS_NAME=${STORAGE_CLASS_NAME:-$STORAGE_CLASS_WITH_SNAPSHOT_NAME}
   if [[ -z "$STORAGE_CLASS_NAME" ]]; then
-    echo "STORAGE_CLASS_NAME must be set when using USE_EXISTING_CLUSTER"
-    skip "Test skipped: STORAGE_CLASS_NAME not set (required user configuration)"
+    echo "FATAL: STORAGE_CLASS_NAME must be set when using USE_EXISTING_CLUSTER"
+    echo "Set SKIP_SNAPSHOTTER_TESTS=true to explicitly skip this test if needed"
+    return 1
   fi
 
   run_cmd ${KUBE_BURNER} init -c kube-burner-dv.yml --uuid="${UUID}" --log-level=debug
