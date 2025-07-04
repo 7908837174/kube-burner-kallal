@@ -2,7 +2,12 @@
 
 ## Latest Changes Based on Reviewer Feedback
 
-1. **Removed Unrelated `run-tests.sh` Files and Restored Original Makefile**
+1. **Fixed Test Skip Logic in `test/test-k8s.bats`**
+   - Changed tests to explicitly fail instead of silently skipping when required variables are not set
+   - Added messages directing users to set SKIP_* variables to explicitly skip tests
+   - Aligns with our policy that tests should only be skipped when explicitly requested
+
+2. **Removed Unrelated `run-tests.sh` Files and Restored Original Makefile**
    - Removed both `/workspaces/kube-burner/run-tests.sh` and `/workspaces/kube-burner/test/run-tests.sh`
    - Restored the original Makefile to remove parallel test execution changes
    - These files were unrelated to the current PR's scope and have been removed
