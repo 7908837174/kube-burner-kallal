@@ -163,8 +163,7 @@ func (s *serviceLatency) Start(measurementWg *sync.WaitGroup) error {
 	// Reset latency slices, required in multi-job benchmarks
 	s.latencyQuantiles, s.normLatencies = nil, nil
 	defer measurementWg.Done()
-	// Use busybox image which has netcat built-in and is available in most environments
-	err := deployPodInNamespace(s.ClientSet, types.SvcLatencyNs, types.SvcLatencyCheckerName, "busybox:latest", []string{"sleep", "inf"})
+	err := deployPodInNamespace(s.ClientSet, types.SvcLatencyNs, types.SvcLatencyCheckerName, "quay.io/cloud-bulldozer/fedora-nc:latest", []string{"sleep", "inf"})
 	if err != nil {
 		return err
 	}
