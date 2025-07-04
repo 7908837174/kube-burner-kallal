@@ -9,6 +9,25 @@ Tests can be executed locally with `make test`, some requirements are needed tho
 - kubectl
 - podman or docker (required to run [kind](https://kind.sigs.k8s.io/))
 
+## Test Tags
+
+kube-burner tests are categorized using tags. Tags allow running specific sets of tests based on their functionality. For detailed information on test tags and how to use them, see [Test Tags](test-tags.md).
+
+### Running tests with specific tags
+
+To run only tests with specific tags:
+
+```bash
+# Run only core tests
+make test-k8s TEST_TAGS="core"
+
+# Run tests with multiple tags (logical OR)
+make test-k8s TEST_TAGS="core indexing"
+
+# Combine with name filtering
+make test-k8s TEST_TAGS="core" TEST_FILTER="init"
+```
+
 ### Running test with Podman
 
 Since the test suite includes KubeVirt VMs, it must run with rootful Podman.

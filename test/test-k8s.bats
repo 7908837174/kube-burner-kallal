@@ -101,6 +101,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: churn=true; absolute-path=true; job-gc=true" {
+  # Tags: core init churn gc
   export CHURN=true
   export CHURN_CYCLES=2
   export GC=false
@@ -112,6 +113,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: gc=false" {
+  # Tags: core init gc
   export GC=false
   run_cmd ${KUBE_BURNER} init -c kube-burner.yml --uuid="${UUID}" --log-level=debug
   check_ns kube-burner-job=namespaced,kube-burner-uuid="${UUID}" 5
@@ -124,6 +126,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: os-indexing=true; local-indexing=true; vm-latency-indexing=true" {
+  # Tags: core init indexing latency
   # Only skip if explicitly told to do so by SKIP_KUBEVIRT_TESTS
   # This ensures we catch real failures in CI instead of silently skipping
   skip_if_kubevirt_tests_disabled
@@ -136,6 +139,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: local-indexing=true; pod-latency-metrics-indexing=true" {
+  # Tags: core init indexing latency
   export LOCAL_INDEXING=true
   run_cmd ${KUBE_BURNER} init -c kube-burner.yml --uuid="${UUID}" --log-level=debug
   check_file_list ${METRICS_FOLDER}/jobSummary.json ${METRICS_FOLDER}/podLatencyMeasurement-namespaced.json ${METRICS_FOLDER}/podLatencyQuantilesMeasurement-namespaced.json ${METRICS_FOLDER}/svcLatencyMeasurement-namespaced.json ${METRICS_FOLDER}/svcLatencyQuantilesMeasurement-namespaced.json
@@ -144,6 +148,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: os-indexing=true; local-indexing=true; alerting=true"  {
+  # Tags: core init indexing alerting
   export ES_INDEXING=true LOCAL_INDEXING=true ALERTING=true
   run_cmd ${KUBE_BURNER} init -c kube-burner.yml --uuid="${UUID}" --log-level=debug
   check_metric_value jobSummary top2PrometheusCPU prometheusRSS podLatencyMeasurement podLatencyQuantilesMeasurement jobLatencyMeasurement jobLatencyQuantilesMeasurement alert
@@ -153,6 +158,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: os-indexing=true; local-indexing=true; metrics-endpoint=true" {
+  # Tags: core init indexing metrics
   export ES_INDEXING=true LOCAL_INDEXING=true TIMESERIES_INDEXER=local-indexing
   run_cmd ${KUBE_BURNER} init -c kube-burner.yml --uuid="${UUID}" --log-level=debug -e metrics-endpoints.yaml
   check_file_list ${METRICS_FOLDER}/jobSummary.json  ${METRICS_FOLDER}/podLatencyQuantilesMeasurement-namespaced.json ${METRICS_FOLDER}/svcLatencyMeasurement-namespaced.json ${METRICS_FOLDER}/svcLatencyQuantilesMeasurement-namespaced.json
@@ -161,17 +167,20 @@ teardown_file() {
 }
 
 @test "kube-burner index: local-indexing=true; tarball=true" {
+  # Tags: core index
   run_cmd ${KUBE_BURNER} index --uuid="${UUID}" -u http://localhost:9090 -m "metrics-profile.yaml,metrics-profile.yaml" --tarball-name=metrics.tgz --start="$(date -d "-2 minutes" +%s)"
   check_file_list collected-metrics/top2PrometheusCPU.json collected-metrics/top2PrometheusCPU-start.json collected-metrics/prometheusRSS.json
   run_cmd ${KUBE_BURNER} import --tarball=metrics.tgz --es-server=${ES_SERVER} --es-index=${ES_INDEX}
 }
 
 @test "kube-burner index: metrics-endpoint=true; os-indexing=true" {
+  # Tags: core index metrics
   run_cmd ${KUBE_BURNER} index --uuid="${UUID}" -e metrics-endpoints.yaml --es-server=${ES_SERVER} --es-index=${ES_INDEX}
   check_file_list collected-metrics/top2PrometheusCPU.json collected-metrics/prometheusRSS.json collected-metrics/prometheusRSS.json
 }
 
 @test "kube-burner init: crd" {
+  # Tags: core init crd
   kubectl apply -f objectTemplates/burnerTest-crd.yml
   sleep 5
   run_cmd ${KUBE_BURNER} init -c kube-burner-crd.yml --uuid="${UUID}"
@@ -180,6 +189,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: delete=true; os-indexing=true; local-indexing=true" {
+  # Tags: core init indexing delete
   export ES_INDEXING=true LOCAL_INDEXING=true
   run_cmd ${KUBE_BURNER} init -c kube-burner-delete.yml --uuid "${UUID}" --log-level=debug
   check_destroyed_ns kube-burner-job=not-namespaced,kube-burner-uuid="${UUID}"
@@ -208,10 +218,12 @@ teardown_file() {
 }
 
 @test "kube-burner cluster health check" {
+  # Tags: core monitoring
   run_cmd ${KUBE_BURNER} health-check
 }
 
 @test "kube-burner check-alerts" {
+  # Tags: core alerting
   run_cmd ${KUBE_BURNER} check-alerts -a alerts.yml -u http://localhost:9090 --metrics-directory=alerts
   check_file_list alerts/alert.json
 }
@@ -247,6 +259,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: jobType kubevirt" {
+  # Tags: kubevirt init
   # Only skip if explicitly told to do so by SKIP_KUBEVIRT_TESTS
   # This ensures we catch real failures in CI instead of silently skipping
   skip_if_kubevirt_tests_disabled
@@ -254,6 +267,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: user data file" {
+  # Tags: kubevirt init
   export NAMESPACE="userdata"
   export deploymentLabelFromEnv="from-env"
   export REPLICAS=5
@@ -274,6 +288,7 @@ teardown_file() {
 }
 
 @test "kube-burner init: datavolume latency" {
+  # Tags: kubevirt cdi latency
   # Only skip if explicitly told to do so by various SKIP_* variables
   # This ensures we catch real failures in CI instead of silently skipping
   skip_if_kubevirt_tests_disabled

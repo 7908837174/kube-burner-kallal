@@ -16,7 +16,9 @@ nav:
   - GitHub Workflows:
     - contributing/pullrequest.md
     - contributing/release.md
-  - Tests: contributing/tests.md
+  - Testing:
+    - Tests: contributing/tests.md
+    - Test Tags: contributing/test-tags.md
 - Wrappers: wrappers/wrappers.md
 site_name: Kube-burner
 plugins:
