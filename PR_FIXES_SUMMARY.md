@@ -2,7 +2,12 @@
 
 ## Latest Changes Based on Reviewer Feedback
 
-1. **Fixed Test Skip Logic in `test/test-k8s.bats`**
+1. **Refactored Test Skip Logic Using Helper Functions**
+   - Added helper functions in `helpers.bash`: `skip_if_kubevirt_tests_disabled`, `skip_if_cdi_tests_disabled`, and `skip_if_snapshotter_tests_disabled`
+   - Updated all skip checks in `test-k8s.bats` to use these helper functions
+   - Reduced code duplication and improved maintainability of test skip logic
+
+2. **Fixed Test Skip Logic in `test/test-k8s.bats`**
    - Changed tests to explicitly fail instead of silently skipping when required variables are not set
    - Added messages directing users to set SKIP_* variables to explicitly skip tests
    - Aligns with our policy that tests should only be skipped when explicitly requested
