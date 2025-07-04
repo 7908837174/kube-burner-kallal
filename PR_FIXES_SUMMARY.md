@@ -2,12 +2,17 @@
 
 ## Latest Changes Based on Reviewer Feedback
 
-1. **Reverted Unrelated Changes to `pkg/measurements/util/svc_checker.go`**
+1. **Removed Unrelated `run-tests.sh` Files and Restored Original Makefile**
+   - Removed both `/workspaces/kube-burner/run-tests.sh` and `/workspaces/kube-burner/test/run-tests.sh`
+   - Restored the original Makefile to remove parallel test execution changes
+   - These files were unrelated to the current PR's scope and have been removed
+
+2. **Reverted Unrelated Changes to `pkg/measurements/util/svc_checker.go`**
    - Restored the original netcat command implementation with `bash` and `-w 0.1s` parameter
    - Removed all the complex wrapper script and netcat detection code
    - This change was unrelated to the current PR's scope and has been reverted
 
-2. **Removed `.github/workflows/ci-parallel.yml`**
+3. **Removed `.github/workflows/ci-parallel.yml`**
    - Removed the additional CI workflow file as per reviewer feedback
    - The reviewer noted that the parallel workflow should replace the current one, not be an addition
 
