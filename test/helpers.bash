@@ -20,6 +20,30 @@ SERVICE_CHECKER_POD="svc-checker"
 # 4. For external dependencies that may be unreliable (GitHub API calls), we use fallback versions
 #    after retries fail rather than failing the tests entirely
 
+# Helper functions for skipping tests based on environment variables
+# These functions implement the policy that tests are ONLY skipped when explicitly requested
+
+# Check if KubeVirt tests should be skipped
+skip_if_kubevirt_tests_disabled() {
+  if [[ "${SKIP_KUBEVIRT_TESTS:-false}" == "true" ]]; then
+    skip "KubeVirt tests explicitly skipped by user (SKIP_KUBEVIRT_TESTS=true)"
+  fi
+}
+
+# Check if CDI tests should be skipped
+skip_if_cdi_tests_disabled() {
+  if [[ "${SKIP_CDI_TESTS:-false}" == "true" ]]; then
+    skip "CDI tests explicitly skipped by user (SKIP_CDI_TESTS=true)"
+  fi
+}
+
+# Check if volume snapshotter tests should be skipped
+skip_if_snapshotter_tests_disabled() {
+  if [[ "${SKIP_SNAPSHOTTER_TESTS:-false}" == "true" ]]; then
+    skip "Snapshotter tests explicitly skipped by user (SKIP_SNAPSHOTTER_TESTS=true)"
+  fi
+}
+
 # This function ensures the service-checker pod is properly set up for service latency tests
 setup-service-checker() {
   # Add a unique identifier to avoid conflicts when tests run in parallel

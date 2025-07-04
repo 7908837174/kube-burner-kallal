@@ -126,9 +126,7 @@ teardown_file() {
 @test "kube-burner init: os-indexing=true; local-indexing=true; vm-latency-indexing=true" {
   # Only skip if explicitly told to do so by SKIP_KUBEVIRT_TESTS
   # This ensures we catch real failures in CI instead of silently skipping
-  if [[ "${SKIP_KUBEVIRT_TESTS:-false}" == "true" ]]; then
-    skip "KubeVirt tests explicitly skipped by user (SKIP_KUBEVIRT_TESTS=true)"
-  fi
+  skip_if_kubevirt_tests_disabled
   export ES_INDEXING=true LOCAL_INDEXING=true ALERTING=true
   run_cmd ${KUBE_BURNER} init -c kube-burner-virt.yml --uuid="${UUID}" --log-level=debug
   check_metric_value jobSummary top2PrometheusCPU prometheusRSS vmiLatencyMeasurement vmiLatencyQuantilesMeasurement alert
@@ -251,9 +249,7 @@ teardown_file() {
 @test "kube-burner init: jobType kubevirt" {
   # Only skip if explicitly told to do so by SKIP_KUBEVIRT_TESTS
   # This ensures we catch real failures in CI instead of silently skipping
-  if [[ "${SKIP_KUBEVIRT_TESTS:-false}" == "true" ]]; then
-    skip "KubeVirt tests explicitly skipped by user (SKIP_KUBEVIRT_TESTS=true)"
-  fi
+  skip_if_kubevirt_tests_disabled
   run_cmd ${KUBE_BURNER} init -c  kube-burner-virt-operations.yml --uuid="${UUID}" --log-level=debug
 }
 
@@ -278,23 +274,11 @@ teardown_file() {
 }
 
 @test "kube-burner init: datavolume latency" {
-  # Only skip if explicitly told to do so by SKIP_KUBEVIRT_TESTS
+  # Only skip if explicitly told to do so by various SKIP_* variables
   # This ensures we catch real failures in CI instead of silently skipping
-  if [[ "${SKIP_KUBEVIRT_TESTS:-false}" == "true" ]]; then
-    skip "KubeVirt tests explicitly skipped by user (SKIP_KUBEVIRT_TESTS=true)"
-  fi
-  
-  # Only skip if explicitly told to do so by SKIP_CDI_TESTS
-  # This ensures we catch real failures in CI instead of silently skipping
-  if [[ "${SKIP_CDI_TESTS:-false}" == "true" ]]; then
-    skip "CDI tests explicitly skipped by user (SKIP_CDI_TESTS=true)"
-  fi
-  
-  # Only skip if explicitly told to do so by SKIP_SNAPSHOTTER_TESTS
-  # This ensures we catch real failures in CI instead of silently skipping
-  if [[ "${SKIP_SNAPSHOTTER_TESTS:-false}" == "true" ]]; then
-    skip "Snapshotter tests explicitly skipped by user (SKIP_SNAPSHOTTER_TESTS=true)"
-  fi
+  skip_if_kubevirt_tests_disabled
+  skip_if_cdi_tests_disabled
+  skip_if_snapshotter_tests_disabled
   
   # Required variables must be set, or user must explicitly skip the test
   if [[ -z "$VOLUME_SNAPSHOT_CLASS_NAME" ]]; then
@@ -328,9 +312,7 @@ teardown_file() {
 @test "kube-burner init: metrics aggregation" {
   # Only skip if explicitly told to do so by SKIP_KUBEVIRT_TESTS
   # This ensures we catch real failures in CI instead of silently skipping
-  if [[ "${SKIP_KUBEVIRT_TESTS:-false}" == "true" ]]; then
-    skip "KubeVirt tests explicitly skipped by user (SKIP_KUBEVIRT_TESTS=true)"
-  fi
+  skip_if_kubevirt_tests_disabled
   
   export STORAGE_CLASS_NAME
   STORAGE_CLASS_NAME=$(get_default_storage_class)
