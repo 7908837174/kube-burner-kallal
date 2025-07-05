@@ -63,19 +63,19 @@ fi
 echo "Pushing changes to main branch..."
 
 # Try regular push first
-git push origin main && {
+git push origin main || {
   echo "====== PUSH COMPLETED SUCCESSFULLY ======"
 } || {
   echo "Regular push failed, trying with --force-with-lease..."
   
   # Try force with lease (safer than direct force)
-  git push --force-with-lease origin main && {
+  git push --force-with-lease origin main || {
     echo "====== PUSH COMPLETED WITH FORCE-WITH-LEASE ======"
   } || {
     echo "Force-with-lease failed, trying direct force push..."
     
     # Last resort: direct force push
-    git push -f origin main && {
+    git push -f origin main || {
       echo "====== PUSH COMPLETED WITH FORCE ======"
     } || {
       echo "All push attempts failed. Please check repository permissions."

@@ -51,7 +51,7 @@ fi
 
 # IMPORTANT: For PR #911, directly use force push to ensure all commits are pushed
 echo "===== FORCE PUSHING ALL COMMITS TO PR #911 ====="
-git push -f origin $CURRENT_BRANCH
+git push -f origin "$CURRENT_BRANCH"
 
 echo "===== FORCE PUSH TO PR #911 COMPLETED ====="
 echo "All commits have been force pushed to $CURRENT_BRANCH branch for PR #911"

@@ -60,28 +60,28 @@ echo "==== PUSHING ALL COMMITS TO PR #911 ===="
 
 # First try a simple push
 echo "Attempting normal push..."
-if git push origin $CURRENT_BRANCH; then
+if git push origin "$CURRENT_BRANCH"; then
   echo "✅ Normal push successful!"
   exit 0
 fi
 
 # If that fails, try with pull and rebase
 echo "Normal push failed. Trying pull and rebase..."
-if git pull --rebase origin $CURRENT_BRANCH && git push origin $CURRENT_BRANCH; then
+if git pull --rebase origin "$CURRENT_BRANCH" && git push origin "$CURRENT_BRANCH"; then
   echo "✅ Pull, rebase and push successful!"
   exit 0
 fi
 
 # If that fails, try force with lease
 echo "Pull and rebase failed. Trying force with lease..."
-if git push --force-with-lease origin $CURRENT_BRANCH; then
+if git push --force-with-lease origin "$CURRENT_BRANCH"; then
   echo "✅ Force with lease push successful!"
   exit 0
 fi
 
 # Last resort: direct force push
 echo "Force with lease failed. Trying direct force push..."
-if git push -f origin $CURRENT_BRANCH; then
+if git push -f origin "$CURRENT_BRANCH"; then
   echo "✅ Direct force push successful!"
   exit 0
 else
