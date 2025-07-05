@@ -1,0 +1,146 @@
+# ci-parallel.yml
+name: Parallel Test Execution
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    paths:
+      - '**.go'
+      - 'Makefile'
+      - '.github/workflows/**'
+      - 'test/**'
+
+jobs:
+  fetch-latest-kind-node-tags:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.fetch-versions.outputs.tags }}
+    steps:
+      - name: Fetch latest patch version for the latest 3 minor versions of kindest/node
+        id: fetch-versions
+        run: |
+          # Fetch tags from Docker Hub API
+          all_tags=$(curl -s "https://hub.docker.com/v2/repositories/kindest/node/tags/?page_size=100" | jq -r '.results[].name')
+
+          # Filter semantic versioning tags
+          semver_tags=$(echo "$all_tags" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
+
+          # Get the latest patch versions of the latest 3 minor versions
+          latest_three=$(echo "$semver_tags" | sort -V | awk -F. '{print $1"."$2}' | uniq | tail -n 3 | while read minor; do
+            echo "$semver_tags" | grep "^$minor" | sort -V | tail -n 1
+          done)
+
+          echo "Latest patch versions of the latest 3 minor versions:"
+          echo "$latest_three"
+
+          # Convert the output to a JSON array for use in other steps
+          tags_json=$(echo "$latest_three" | jq -c -R -s 'split("\n") | map(select(length > 0))')
+          echo "tags=$tags_json" >> "$GITHUB_OUTPUT"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build kube-burner
+        run: make build
+
+      - name: Upload kube-burner binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: kube-burner
+          path: bin/amd64/kube-burner
+          retention-days: 1
+
+  test-k8s-core:
+    needs: [fetch-latest-kind-node-tags, build]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s-version: ${{ fromJson(needs.fetch-latest-kind-node-tags.outputs.tags) }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Download kube-burner binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kube-burner
+          path: /tmp/
+
+      - name: Install bats
+        uses: bats-core/bats-action@3.0.1
+        with:
+          bats-version: 1.10.0
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+
+      - name: Execute Core Tests
+        run: |
+          chmod +x /tmp/kube-burner
+          make test-k8s
+        env:
+          TERM: linux
+          KIND_VERSION: v0.19.0
+          K8S_VERSION: ${{matrix.k8s-version}}
+          PERFSCALE_PROD_ES_SERVER: ${{ secrets.PERFSCALE_PROD_ES_SERVER }}
+          TEST_BINARY: /tmp/kube-burner
+          TEST_TAGS: "core"
+
+  test-k8s-kubevirt:
+    needs: [fetch-latest-kind-node-tags, build]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s-version: ${{ fromJson(needs.fetch-latest-kind-node-tags.outputs.tags) }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Download kube-burner binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kube-burner
+          path: /tmp/
+
+      - name: Install bats
+        uses: bats-core/bats-action@3.0.1
+        with:
+          bats-version: 1.10.0
+          support-install: false
+          assert-install: false
+          detik-install: false
+          file-install: false
+
+      - name: Execute KubeVirt Tests
+        run: |
+          chmod +x /tmp/kube-burner
+          make test-k8s
+        env:
+          TERM: linux
+          KIND_VERSION: v0.19.0
+          K8S_VERSION: ${{matrix.k8s-version}}
+          PERFSCALE_PROD_ES_SERVER: ${{ secrets.PERFSCALE_PROD_ES_SERVER }}
+          TEST_BINARY: /tmp/kube-burner
+          TEST_TAGS: "kubevirt"
