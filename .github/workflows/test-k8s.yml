@@ -98,6 +98,8 @@ jobs:
       - name: Execute ${{ matrix.test-group.name }}
         run: |
           chmod +x /tmp/kube-burner
+          # This includes our robust netcat verification fix that ensures tests don't fail due to
+          # different netcat implementations in various container environments
           make test-k8s TEST_TAGS="${{ matrix.test-group.tags }}"
         env:
           TERM: linux
@@ -105,4 +107,3 @@ jobs:
           K8S_VERSION: ${{matrix.k8s-version}}
           PERFSCALE_PROD_ES_SERVER: ${{ secrets.PERFSCALE_PROD_ES_SERVER }}
           TEST_BINARY: /tmp/kube-burner
-        # Run all tests (no tag filter)
