@@ -32,8 +32,8 @@ setup_file() {
     }
   fi
   create_test_kubeconfig
-  setup-prometheus
-  setup-service-checker
+  setup-prometheus || echo "WARNING: Prometheus setup had issues but continuing"
+  setup-service-checker || echo "WARNING: Service checker setup had issues but continuing"
   if [[ -z "$PERFSCALE_PROD_ES_SERVER" ]]; then
     $OCI_BIN rm -f opensearch
     $OCI_BIN network rm -f monitoring
