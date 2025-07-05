@@ -108,6 +108,7 @@ setup-service-checker() {
   # Set up cleanup function
   cleanup_test_lock() {
     # Clean up the lock directory
+    # Cleanup function
     rm -rf "${lock_file}.${test_uuid}" 2>/dev/null || true
     echo "Lock for test ${test_uuid} released"
   }
