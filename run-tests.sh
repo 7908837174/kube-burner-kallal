@@ -4,10 +4,13 @@
 set -e
 
 echo "===== RUNNING TESTS TO VERIFY NETCAT FIXES ====="
-cd /workspaces/kube-burner
+cd /workspaces/kube-burner || exit 1
 
 # Configure git
 git config --global --add safe.directory /workspaces/kube-burner
+
+# Set default parallelism
+PARALLELISM="${PARALLELISM:-4}"
 
 # Run the test
 echo "===== RUNNING TEST TASK ====="
