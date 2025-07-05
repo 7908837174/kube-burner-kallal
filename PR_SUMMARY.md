@@ -1,5 +1,21 @@
 # PR #911 Summary
 
+## Shellcheck Issues Fixed
+
+This PR successfully fixes all the shellcheck issues that were identified by the pre-commit hook:
+
+1. **SC2035**: Fixed glob patterns in shell scripts
+   - Used `./*.bats ./*.bash` instead of `*.bats *.bash` in `test/run-tests.sh`
+
+2. **SC2086**: Fixed quoting issues to prevent word splitting
+   - Added proper quotes around `$PARALLELISM` in `run-tests.sh` and `test/run-tests.sh`
+
+3. **SC2004**: Removed unnecessary `$` in arithmetic expressions
+   - Fixed arithmetic expressions in `test/helpers.bash`
+
+4. **SC2181**: Changed indirect exit code checks to direct command checks
+   - Replaced `if [ $? -ne 0 ]` patterns with direct command checks
+
 ## Changes Made in Response to Reviewer Feedback
 
 1. **Indentation in `.github/workflows/test-k8s.yml`**
