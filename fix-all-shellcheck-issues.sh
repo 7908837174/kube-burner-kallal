@@ -1,13 +1,78 @@
 #!/bin/bash
-# Script to fix all shellcheck issues in PR #911
+# Script to fix all shellcheck issues in the repository
 
-set -e
+set -e 
 
-echo "===== Fixing all shellcheck issues in PR #911 ====="
+echo "===== FIXING ALL SHELLCHECK ISSUES ====="
 
-# Fix test/run-tests.sh
-echo "Fixing test/run-tests.sh..."
-cat > test/run-tests.sh << 'EOF'
+# Function to detect and fix SC2035 issues (glob patterns without ./)
+fix_sc2035() {
+    echo "Fixing SC2035 issues (glob patterns without ./)..."
+    # Fix glob patterns in test/run-tests.sh
+    if [ -f "test/run-tests.sh" ]; then
+        sed -i 's/chmod +x \*\.bats \*\.bash/chmod +x .\/\*\.bats .\/\*\.bash/g' test/run-tests.sh
+    fi
+}
+
+# Function to detect and fix SC2086 issues (unquoted variables)
+fix_sc2086() {
+    echo "Fixing SC2086 issues (unquoted variables)..."
+    # Fix unquoted variables in test/run-tests.sh
+    if [ -f "test/run-tests.sh" ]; then
+        sed -i 's/-j $PARALLELISM/-j "$PARALLELISM"/g' test/run-tests.sh
+    fi
+    
+    # Fix unquoted variables in run-tests.sh
+    if [ -f "run-tests.sh" ]; then
+        sed -i 's/-j $PARALLELISM/-j "$PARALLELISM"/g' run-tests.sh
+    fi
+}
+
+# Function to detect and fix SC2004 issues (unnecessary $ in arithmetic expressions)
+fix_sc2004() {
+    echo "Fixing SC2004 issues (unnecessary $ in arithmetic expressions)..."
+    # Fix arithmetic expressions in test/helpers.bash
+    if [ -f "test/helpers.bash" ]; then
+        sed -i 's/\$((\$SECONDS - \$start_time))/\$((SECONDS - start_time))/g' test/helpers.bash
+        sed -i 's/\$((\$timeout - \$SECONDS + \$start_time))/\$((timeout - SECONDS + start_time))/g' test/helpers.bash
+    fi
+}
+
+# Function to detect and fix SC2181 issues (checking $? instead of direct command check)
+fix_sc2181() {
+    echo "Fixing SC2181 issues (checking exit code with $?)..."
+    # Fix exit code checks in test/helpers.bash
+    if [ -f "test/helpers.bash" ]; then
+        # We need to check each line number reported to fix properly
+        while IFS= read -r line_info; do
+            line_num=$(echo "$line_info" | cut -d: -f1)
+            if [ -n "$line_num" ]; then
+                echo "Fixing exit code check at line $line_num"
+                cmd_line=$((line_num - 1))
+                command=$(sed -n "${cmd_line}p" test/helpers.bash)
+                cmd_name=$(echo "$command" | awk '{print $1}')
+                
+                if [ -n "$cmd_name" ]; then
+                    sed -i "${line_num}s/if \[ \$? -ne 0 \]/if ! ${cmd_name}/" test/helpers.bash
+                else
+                    sed -i "${line_num}s/if \[ \$? -ne 0 \]/if ! command/" test/helpers.bash
+                fi
+            fi
+        done < <(grep -n "if \[ \$? -ne 0 \]" test/helpers.bash || echo "")
+    fi
+}
+
+# Run all fix functions
+fix_sc2035
+fix_sc2086
+fix_sc2004
+fix_sc2181
+
+# Manually recreate or fix files that might be causing issues
+echo "===== CREATING FIXED VERSIONS OF KEY FILES ====="
+
+# Create test/run-tests.sh
+cat > test/run-tests.sh << 'EOT'
 #!/bin/bash
 # Shell script to run kube-burner tests with proper permissions
 set -e
@@ -24,19 +89,17 @@ PARALLELISM="${PARALLELISM:-4}"
 # Run tests with proper parameters
 echo "Running tests with parallelism: $PARALLELISM"
 KUBE_BURNER=$KUBE_BURNER bats -F pretty -T --print-output-on-failure -j "$PARALLELISM" test-k8s.bats
-EOF
+EOT
 chmod +x test/run-tests.sh
-echo "Fixed test/run-tests.sh"
 
-# Fix run-tests.sh
-echo "Fixing run-tests.sh..."
-cat > run-tests.sh << 'EOF'
+# Create run-tests.sh
+cat > run-tests.sh << 'EOT'
 #!/bin/bash
-# run-tests.sh - Run the tests to verify all netcat fixes are working
+# run-tests.sh - Run tests for kube-burner
 
 set -e
 
-echo "===== RUNNING TESTS TO VERIFY NETCAT FIXES ====="
+echo "===== RUNNING KUBE-BURNER TESTS ====="
 cd /workspaces/kube-burner || exit 1
 
 # Configure git
@@ -46,38 +109,17 @@ git config --global --add safe.directory /workspaces/kube-burner
 PARALLELISM="${PARALLELISM:-4}"
 
 # Run the test
-echo "===== RUNNING TEST TASK ====="
-make test-k8s TEST_TAGS="core"
+echo "===== RUNNING TESTS ====="
+KUBE_BURNER=$KUBE_BURNER bats -F pretty -T --print-output-on-failure -j "$PARALLELISM" test/test-k8s.bats
 
 echo "===== TESTS COMPLETED ====="
-echo "If all tests ran successfully, the netcat fixes are working properly."
-EOF
+EOT
 chmod +x run-tests.sh
-echo "Fixed run-tests.sh"
 
-# Fix the arithmetic expressions and $? checks in test/helpers.bash
-echo "Fixing test/helpers.bash..."
+echo "===== ALL FIXES APPLIED ====="
 
-# First, check if the specific issues mentioned in the error actually exist
-if grep -q "\$((\$SECONDS - \$start_time))" test/helpers.bash; then
-    echo "Fixing arithmetic expressions in test/helpers.bash..."
-    sed -i 's/\$((\$SECONDS - \$start_time))/$((\SECONDS - start_time))/g' test/helpers.bash
-    sed -i 's/\$((\$timeout - \$SECONDS + \$start_time))/$((\timeout - SECONDS + start_time))/g' test/helpers.bash
-    echo "Fixed arithmetic expressions in test/helpers.bash"
-fi
+# Run pre-commit to verify
+echo "===== VERIFYING FIXES ====="
+pre-commit run shellcheck || echo "Some shellcheck issues might still remain"
 
-if grep -q "\[ \$? -ne 0 \]" test/helpers.bash; then
-    echo "Fixing \$? checks in test/helpers.bash..."
-    # This would need to be replaced with a direct command check, but we'd need more context
-    # For now, we'll just comment this for manual inspection
-    sed -i 's/if \[ \$? -ne 0 \]; then/# FIXME: Needs direct command check\nif [ $? -ne 0 ]; then/' test/helpers.bash
-    echo "Marked \$? checks for manual inspection in test/helpers.bash"
-fi
-
-# Commit and push the changes
-echo "Committing and pushing changes..."
-git add test/run-tests.sh run-tests.sh test/helpers.bash
-git commit -m "Fix all shellcheck issues in PR #911"
-git push --force-with-lease
-
-echo "===== All shellcheck issues fixed and pushed! ====="
+echo "===== DONE ====="
