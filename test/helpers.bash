@@ -262,7 +262,7 @@ EOF
   local wait_attempts=5
   local wait_timeout=180s
   
-  for attempt in $(seq 1 $wait_attempts); do
+  for attempt in $(seq 1 "$wait_attempts"); do
     echo "Waiting for service checker pod to be ready (attempt $attempt/$wait_attempts, timeout: $wait_timeout)"
     if kubectl wait --for=condition=Ready pod/${SERVICE_CHECKER_POD} -n ${SERVICE_LATENCY_NS} --timeout=$wait_timeout; then
       echo "Service checker pod is ready on attempt $attempt"
