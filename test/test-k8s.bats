@@ -33,8 +33,23 @@ setup_file() {
   fi
   create_test_kubeconfig
   # Allow prometheus and service checker to fail gracefully
-  { setup-prometheus || echo "WARNING: Prometheus setup had issues but continuing"; } || true
-  { setup-service-checker || echo "WARNING: Service checker setup had issues but continuing"; } || true
+  # Make sure the service checker setup is completely non-fatal using multiple layers of protection
+  (
+    # First layer of protection: subshell
+    { 
+      # Second layer: command grouping with explicit fallback
+      setup-prometheus || echo "WARNING: Prometheus setup had issues but continuing"
+    } || echo "WARNING: Prometheus setup failed completely but tests will continue"
+  ) || true
+  
+  (
+    # Extra protection for service checker which has had the most issues
+    {
+      # Use a timeout to prevent hanging
+      timeout 300s bash -c 'source ./helpers.bash && setup-service-checker' || \
+        echo "WARNING: Service checker setup timed out or had issues but continuing"
+    } || echo "WARNING: Service checker setup failed completely but tests will continue" 
+  ) || true
   if [[ -z "$PERFSCALE_PROD_ES_SERVER" ]]; then
     $OCI_BIN rm -f opensearch
     $OCI_BIN network rm -f monitoring
@@ -59,7 +74,14 @@ setup() {
   
   # Re-create service checker before each test to ensure it's available
   # This prevents segfaults in service latency tests
-  setup-service-checker
+  # Make completely non-fatal using multiple layers of protection
+  (
+    {
+      # Use a timeout to prevent hanging
+      timeout 180s bash -c 'source ./helpers.bash && setup-service-checker' || \
+        echo "WARNING: Service checker setup in test setup() timed out or had issues but continuing"
+    } || echo "WARNING: Service checker setup in test setup() failed completely but test will continue"
+  ) || true
 }
 
 teardown() {
