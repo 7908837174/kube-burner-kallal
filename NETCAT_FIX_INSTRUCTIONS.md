@@ -1,27 +1,27 @@
-#!/bin/bash
-# Documentation on the netcat fix for PR #911
+# Netcat Fix Instructions
 
-echo "To push the netcat fix to PR #911, run the following commands step by step:"
-echo ""
-echo "1. First, check the repository status:"
-echo "   cd /workspaces/kube-burner"
-echo "   git status"
-echo ""
-echo "2. Add the modified files:"
-echo "   git add test/helpers.bash PR_NETCAT_FIX.md .github/workflows/test-k8s.yml"
-echo ""
-echo "3. Commit the changes:"
-echo "   git commit -m \"Fix netcat verification in service checker pod to prevent CI failures\""
-echo ""
-echo "4. Push to origin/main (assuming that's the branch associated with PR #911):"
-echo "   git push origin main"
-echo ""
-echo "5. Verify that the changes appear in PR #911:"
-echo "   https://github.com/kube-burner/kube-burner/pull/911"
-echo ""
-echo "The changes include:"
-echo "- Making netcat verification in service checker pod completely non-fatal"
-echo "- Adding robust fallback scripts for different netcat implementations"
-echo "- Ensuring test setup always completes regardless of netcat functionality"
-echo "- Updated documentation about the netcat fix in PR_NETCAT_FIX.md"
-echo "- Added comments in the workflow file about the netcat fix"
+## Summary of Changes
+
+This PR fixes shellcheck issues identified by pre-commit in the following files:
+
+1. `/workspaces/kube-burner/test/run-tests.sh`:
+   - Fixed SC2035: Used `./*.bats ./*.bash` instead of `*.bats *.bash` to prevent glob issues with filenames containing dashes
+   - Fixed SC2086: Added quotes around `$PARALLELISM` to prevent word splitting and globbing
+
+2. `/workspaces/kube-burner/run-tests.sh`:
+   - Created this file if missing
+   - Ensured proper quoting around `$PARALLELISM` to prevent SC2086 issues
+
+3. `/workspaces/kube-burner/test/helpers.bash`:
+   - Fixed SC2004: Removed unnecessary `$` in arithmetic expressions
+   - Fixed SC2181: Replaced indirect exit code check with direct command check
+
+## Verification
+
+All shellcheck issues have been fixed and verified with:
+
+```
+pre-commit run shellcheck
+```
+
+This ensures our PR #911 passes all pre-commit checks.
