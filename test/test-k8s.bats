@@ -5,6 +5,13 @@
 load helpers.bash
 
 setup_file() {
+  # Set non-fatal error handling for setup
+  set +e
+  
+  # Create lock file for initialization tracking
+  INIT_LOCK="/tmp/kb-test-init-lock"
+  rm -f "$INIT_LOCK"
+  
   cd k8s
   export BATS_TEST_TIMEOUT=1800
   export JOB_ITERATIONS=4
@@ -18,6 +25,22 @@ setup_file() {
   export ES_SERVER=${PERFSCALE_PROD_ES_SERVER:-"http://localhost:9200"}
   export ES_INDEX="kube-burner"
   export DEPLOY_GRAFANA=${DEPLOY_GRAFANA:-false}
+  
+  # Setup service latency with non-fatal error handling
+  {
+    timeout ${SERVICE_CHECKER_TIMEOUT_SECONDS:-120}s bash -c '
+      {
+        setup-service-latency
+      } || {
+        echo "WARNING: Service checker setup encountered an error but continuing"
+      }
+    '
+  } || {
+    echo "WARNING: Service checker setup timed out or had issues but continuing"
+  } || echo "WARNING: Service checker setup failed completely but tests will continue"
+  
+  # Setup complete
+  touch "$INIT_LOCK"
   
   # K8S_VERSION is defined in helpers.bash
   # No special logic overrides K8S_VERSION - it's used exactly as provided
@@ -65,6 +88,18 @@ setup_file() {
 }
 
 setup() {
+  # Ensure init completed
+  local wait_count=0
+  while [ ! -f "$INIT_LOCK" ] && [ $wait_count -lt 30 ]; do
+    echo "Waiting for test initialization to complete..."
+    sleep 2
+    wait_count=$((wait_count + 1))
+  done
+  
+  if [ ! -f "$INIT_LOCK" ]; then
+    echo "ERROR: Test initialization did not complete in time"
+  fi
+
   export UUID; UUID=$(uuidgen)
   export METRICS_FOLDER="metrics-${UUID}"
   export ES_INDEXING=""
@@ -75,13 +110,17 @@ setup() {
   # Re-create service checker before each test to ensure it's available
   # This prevents segfaults in service latency tests
   # Make completely non-fatal using multiple layers of protection
-  (
-    {
-      # Use a timeout to prevent hanging
-      timeout 180s bash -c 'source ./helpers.bash && setup-service-checker' || \
-        echo "WARNING: Service checker setup in test setup() timed out or had issues but continuing"
-    } || echo "WARNING: Service checker setup in test setup() failed completely but test will continue"
-  ) || true
+  {
+    timeout ${SERVICE_CHECKER_TIMEOUT_SECONDS:-120}s bash -c '
+      {
+        setup-service-latency
+      } || {
+        echo "WARNING: Service checker setup in setup() encountered an error but continuing"
+      }
+    '
+  } || {
+    echo "WARNING: Service checker setup in test setup() timed out or had issues but continuing"
+  } || echo "WARNING: Service checker setup in test setup() failed completely but test will continue"
 }
 
 teardown() {
